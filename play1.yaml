@@ -1,0 +1,29 @@
+-
+    name: 'play1'
+    hosts: all_targets
+    vars:
+        textname:
+          - text: 'echo hello-world loop'
+          - text: hello-world1
+          - text: hello-world2
+        osname:
+          - os1: Debian
+          - os2: Redhat
+    tasks:
+        -
+          name: 'Ping Test'
+          ping:
+
+        -
+          name: 'Echo {{item}}'
+          command: 'echo {{item.text}}'
+          loop: '{{textname}}'
+          register: result
+
+        -
+          name: 'Install nginx'
+          when: ansible_os_family == 'Redhat' and
+                ansible_os_family == 'Debian'
+          apt:
+            name: nginx
+            state: present
