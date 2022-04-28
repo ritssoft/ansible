@@ -1,15 +1,52 @@
 -
   name: Deploy a web application
   hosts: target1
-  tasks:
+  tasks:    
+  #  - name: importar key Mesosphere
+  #    shell: gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E56151BF
+
+  #  - name: Add repo
+   #   become: yes
+    #  apt_repository: repo='deb http://archive.ubuntu.com/ubuntu bionic main' state=absent
+
     - name: Install dependencies
+      become: yes
+      when: ansible_os_family == 'Debian'
       apt: 
         name: '{{item}}'
         state: present
+        update_cache: yes
+       # upgrade: yes
       with_items:
         - python
         - python-setuptools
         - python-dev
         - build-essential
-        - python-pip
+        - python3-pip
         - python-mysqldb
+
+    - name: Install MYSQL database
+      become: yes
+      apt: name={{ item }} state=present
+      with_items:
+       - mysql-server
+       - mysql-client
+
+    - name: Start the MySQL Service
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Create new database
+      mysql_db:
+        name: employee_db
+        state: present
+
+    - name: Create New User
+      mysql_user:
+        name: db_user
+        password: Passw0rd
+        priv: '*.*:ALL'
+        host: '%'
+        state: present
