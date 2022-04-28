@@ -1,6 +1,7 @@
 -
   name: Deploy a web application
   hosts: target1
+  any_errors_fatal: true
   tasks:    
   #  - name: importar key Mesosphere
   #    shell: gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E56151BF
@@ -27,10 +28,17 @@
 
     - name: Install MYSQL database
       become: yes
+     # become_user: ubuntu
       apt: name={{ item }} state=present
       with_items:
        - mysql-server
        - mysql-client
+
+    - name: Install PYMYSQL on DB Server
+      become: yes
+      pip:
+        name: pymysql
+        state: present
 
     - name: Start the MySQL Service
       service:
@@ -39,17 +47,27 @@
         enabled: yes
 
     - name: Create new database
+      become: yes
+      tags:
+        - db
       mysql_db:
-        name: employee_db
+        name: '{{ db_name }}'
         state: present
+        login_unix_socket: /run/mysqld/mysqld.sock
+      #  check_implicit_admin: yes
+       # login_user: '{{ db_user }}'
+       # login_password: '{{ db_password }}'
 
     - name: Create New User
+      tags:
+        - user
       mysql_user:
-        name: db_user
-        password: Passw0rd
+        name: '{{ db_user }}'
+        password: '{{ db_password }}'
         priv: '*.*:ALL'
         host: '%'
         state: present
+     #   login_unix_socket: /run/mysqld/mysqld.sock
     
     - name: Install Python Flask dependencies
       pip:
